@@ -5,7 +5,7 @@ A simple library to easily plot BioIO images with matplotlib.
 ## Installation
 
 ```bash
-git clone https://github.com/Rylern/python-lut          # clone this repository
+git clone https://github.com/Rylern/bioio-plotter          # clone this repository
 cd python-lut                                           # go to the project directory
 python -m venv ./.venv                                  # create a local virual environment
 source ./.venv/bin/activate                             # activate the venv

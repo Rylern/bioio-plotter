@@ -32,7 +32,8 @@ def convert_to_rgb(array: np.ndarray, lut: Lut, t: int = 0, z: int = 0) -> np.nd
         if channel_display is None:
             continue
 
-        array[c] = np.clip(array[c], channel_display.min, channel_display.max)
+        if channel_display.min is not None or channel_display.max is not None:
+            array[c] = np.clip(array[c], channel_display.min, channel_display.max)
 
         min = np.min(array[c]) if channel_display.min is None else channel_display.min
         max = np.max(array[c]) if channel_display.max is None else channel_display.max

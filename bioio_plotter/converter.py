@@ -1,13 +1,13 @@
 import numpy as np
-from .lut import Lut
+from .image_display import ImageDisplay
 
 
-def convert_to_rgb(array: np.ndarray, lut: Lut, t: int = 0, z: int = 0) -> np.ndarray:
+def convert_to_rgb(array: np.ndarray, image_display: ImageDisplay, t: int = 0, z: int = 0) -> np.ndarray:
     """
-    Transform the provided array to an image with RGB values plottable with matplotlib.
+    Transform the provided array with the provided image display to an image with RGB values plottable with matplotlib.
 
     :param array: the array containing the values to plot. It must have 5 dimensions (TCZYX) if not RGB, or 6 dimensions (TCZYXS) if RGB
-    :param lut: the look-up table to use to convert the channels to colors
+    :param image_display: the image display to use to convert the channels to colors
     :param t: the timepoint to consider. 0 by default
     :param z: the z-slice to consider. O by default
     :return: a 3-dimensional numpy array (YX3) containing the input array converted to an image with RGB values between 0 and 1. It can be
@@ -28,18 +28,24 @@ def convert_to_rgb(array: np.ndarray, lut: Lut, t: int = 0, z: int = 0) -> np.nd
     
     channels = []
     for c in range(number_of_channels):
-        channel_display = lut.get_channel_display(c)
-        if channel_display is None:
+        lut = image_display.get_lut(c)
+        if lut is None:
             continue
 
-        if channel_display.min is not None or channel_display.max is not None:
-            array[c] = np.clip(array[c], channel_display.min, channel_display.max)
+        min = lut.get_min(array[c])
+        max = lut.get_max(array[c])
 
-        min = np.min(array[c]) if channel_display.min is None else channel_display.min
-        max = np.max(array[c]) if channel_display.max is None else channel_display.max
+        if min is not None or max is not None:
+            array[c] = np.clip(array[c], min, max)
+
+        min = np.min(array[c]) if min is None else min
+        max = np.max(array[c]) if max is None else max
         array[c] = (array[c] - min) / (max - min)
+
+        if lut.gamma != 1:
+            array[c] = array[c] ** lut.gamma
     
-        channels.append(np.array([channel_display.color[j] * array[c] for j in range(3)]))
+        channels.append(np.array([lut.color[j] * array[c] for j in range(3)]))
     
     channels = np.array(channels)
     res = np.sum(channels, axis=0)

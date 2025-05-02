@@ -1,15 +1,17 @@
 import pytest
 import numpy as np
 from bioio_plotter.converter import convert_to_rgb
-from bioio_plotter.lut import Lut, ChannelDisplay
+from bioio_plotter.image_display import ImageDisplay
+from bioio_plotter.lut import Lut
+from bioio_plotter.percentile import Percentile
 
 
 def test_converter_with_invalid_shape():
     array = np.zeros((1, 1))
-    lut = Lut([])
+    image_display = ImageDisplay([])
 
     with pytest.raises(ValueError):
-        convert_to_rgb(array, lut)
+        convert_to_rgb(array, image_display)
 
 
 def test_converter_with_non_rgb_image():
@@ -23,16 +25,16 @@ def test_converter_with_non_rgb_image():
             [1, 4, 5]
         ]]
     ]])
-    lut = Lut([
-        ChannelDisplay([1, 0, 1], 2, 6),
-        ChannelDisplay([0, 1, 0], 1, 11)
+    image_display = ImageDisplay([
+        Lut([1, 0, 1], 2, 6),
+        Lut([0, 1, 0], 1, 11)
     ])
     expected_array = np.array([
         [[0, 0, 0], [0.75, 1, 0.75], [1,   1, 1]],
         [[0, 0, 0], [1,  0.3,    1], [1, 0.4, 1]]
     ])
 
-    array = convert_to_rgb(non_rgb_image, lut)
+    array = convert_to_rgb(non_rgb_image, image_display)
 
     np.testing.assert_almost_equal(array, expected_array)
 
@@ -42,17 +44,17 @@ def test_converter_with_rgb_image():
         [[20, 17, 201],  [35, 186, 133], [39, 14, 85]],
         [[17, 174, 129], [198, 195, 74], [33, 43, 157]]
     ]]]])
-    lut = Lut([
-        ChannelDisplay([1, 0, 0], 20, 200),
-        ChannelDisplay([0, 1, 0], 0, 255),
-        ChannelDisplay([0, 0, 1], 50, 100)
+    image_display = ImageDisplay([
+        Lut([1, 0, 0], 20, 200),
+        Lut([0, 1, 0], 0, 255),
+        Lut([0, 0, 1], 50, 100)
     ])
     expected_array = np.array([
         [[0, 17/255, 1],  [15/180, 186/255, 1],     [19/180, 14/255, 0.7]],
         [[0, 174/255, 1], [178/180, 195/255, 0.48], [13/180, 43/255, 1]]
     ])
 
-    array = convert_to_rgb(rgb_image, lut)
+    array = convert_to_rgb(rgb_image, image_display)
 
     np.testing.assert_almost_equal(array, expected_array)
 
@@ -103,9 +105,9 @@ def test_converter_with_complex_image():
                 ]
             ]
         ]])
-    lut = Lut([
-        ChannelDisplay([1, 0, 1], 20, 80),
-        ChannelDisplay([0, 1, 0], 0, 100)
+    image_display = ImageDisplay([
+        Lut([1, 0, 1], 20, 80),
+        Lut([0, 1, 0], 0, 100)
     ])
     t = 1
     z = 0
@@ -114,7 +116,43 @@ def test_converter_with_complex_image():
         [[1, 0.43, 1],         [0.5, 0.9, 0.5],  [0.75, 0.63, 0.75]]
     ])
 
-    array = convert_to_rgb(complex_image, lut, t=t, z=z)
+    array = convert_to_rgb(complex_image, image_display, t=t, z=z)
+
+    np.testing.assert_almost_equal(array, expected_array)
+
+
+def test_converter_with_min_percentile():
+    image = np.array([[[[
+        [0, 5, 9],
+        [1, 7, 8]
+    ]]]])
+    image_display = ImageDisplay([
+        Lut([1, 0, 1], min=Percentile(50))
+    ])
+    expected_array = np.array([
+        [[0, 0, 0], [0,   0, 0],   [1,   0, 1]],
+        [[0, 0, 0], [1/3, 0, 1/3], [2/3, 0, 2/3]]
+    ])
+
+    array = convert_to_rgb(image, image_display)
+
+    np.testing.assert_almost_equal(array, expected_array)
+
+
+def test_converter_with_max_percentile():
+    image = np.array([[[[
+        [0, 5, 9],
+        [1, 7, 8]
+    ]]]])
+    image_display = ImageDisplay([
+        Lut([1, 0, 1], max=Percentile(50))
+    ])
+    expected_array = np.array([
+        [[0, 0, 0],     [5/6, 0, 5/6], [1, 0, 1]],
+        [[1/6, 0, 1/6], [1, 0, 1],     [1, 0, 1]]
+    ])
+
+    array = convert_to_rgb(image, image_display)
 
     np.testing.assert_almost_equal(array, expected_array)
 
@@ -130,16 +168,16 @@ def test_converter_with_min_not_defined():
             [1, 4, 5]
         ]]
     ]])
-    lut = Lut([
-        ChannelDisplay(color=[1, 0, 1], max=6),
-        ChannelDisplay(color=[0, 1, 0], min=1, max=11)
+    image_display = ImageDisplay([
+        Lut(color=[1, 0, 1], max=6),
+        Lut(color=[0, 1, 0], min=1, max=11)
     ])
     expected_array = np.array([
         [[0, 0, 0],     [5/6, 1, 5/6], [1, 1, 1]],
         [[1/6, 0, 1/6], [1, 0.3, 1],   [1, 0.4, 1]]
     ])
 
-    array = convert_to_rgb(image, lut)
+    array = convert_to_rgb(image, image_display)
 
     np.testing.assert_almost_equal(array, expected_array)
 
@@ -155,16 +193,16 @@ def test_converter_with_max_not_defined():
             [1, 4, 5]
         ]]
     ]])
-    lut = Lut([
-        ChannelDisplay(color=[1, 0, 1], min=2),
-        ChannelDisplay(color=[0, 1, 0], min=1, max=11)
+    image_display = ImageDisplay([
+        Lut(color=[1, 0, 1], min=2),
+        Lut(color=[0, 1, 0], min=1, max=11)
     ])
     expected_array = np.array([
         [[0, 0, 0], [3/7, 1, 3/7],   [1, 1, 1]],
         [[0, 0, 0], [5/7, 0.3, 5/7], [6/7, 0.4, 6/7]]
     ])
 
-    array = convert_to_rgb(image, lut)
+    array = convert_to_rgb(image, image_display)
 
     np.testing.assert_almost_equal(array, expected_array)
 
@@ -180,14 +218,32 @@ def test_converter_with_channel_not_defined():
             [1, 4, 5]
         ]]
     ]])
-    lut = Lut({
-        1: ChannelDisplay([0, 1, 0], 1, 11)
+    image_display = ImageDisplay({
+        1: Lut([0, 1, 0], 1, 11)
     })
     expected_array = np.array([
         [[0, 0, 0], [0, 1, 0],   [0, 1, 0]],
         [[0, 0, 0], [0, 0.3, 0], [0, 0.4, 0]]
     ])
 
-    array = convert_to_rgb(image, lut)
+    array = convert_to_rgb(image, image_display)
+
+    np.testing.assert_almost_equal(array, expected_array)
+
+
+def test_converter_with_gamma():
+    image = np.array([[[[
+        [0, 5, 9],
+        [1, 3, 8]
+    ]]]])
+    image_display = ImageDisplay([
+        Lut([1, 0, 1], 2, 6, gamma=2)
+    ])
+    expected_array = np.array([
+        [[0, 0, 0], [0.5625, 0, 0.5625], [1, 0, 1]],
+        [[0, 0, 0], [0.0625, 0, 0.0625], [1, 0, 1]]
+    ])
+
+    array = convert_to_rgb(image, image_display)
 
     np.testing.assert_almost_equal(array, expected_array)

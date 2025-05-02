@@ -38,6 +38,9 @@ def convert_to_rgb(array: np.ndarray, image_display: ImageDisplay, t: int = 0, z
         min = np.min(array[c]) if lut.min is None else lut.min
         max = np.max(array[c]) if lut.max is None else lut.max
         array[c] = (array[c] - min) / (max - min)
+
+        if lut.gamma != 1:
+            array[c] = array[c] ** lut.gamma
     
         channels.append(np.array([lut.color[j] * array[c] for j in range(3)]))
     

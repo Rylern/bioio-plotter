@@ -192,3 +192,21 @@ def test_converter_with_channel_not_defined():
     array = convert_to_rgb(image, image_display)
 
     np.testing.assert_almost_equal(array, expected_array)
+
+
+def test_converter_with_gamma():
+    image = np.array([[[[
+        [0, 5, 9],
+        [1, 3, 8]
+    ]]]])
+    image_display = ImageDisplay([
+        Lut([1, 0, 1], 2, 6, gamma=2)
+    ])
+    expected_array = np.array([
+        [[0, 0, 0], [0.5625, 0, 0.5625], [1, 0, 1]],
+        [[0, 0, 0], [0.0625, 0, 0.0625], [1, 0, 1]]
+    ])
+
+    array = convert_to_rgb(image, image_display)
+
+    np.testing.assert_almost_equal(array, expected_array)

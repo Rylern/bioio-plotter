@@ -32,11 +32,14 @@ def convert_to_rgb(array: np.ndarray, image_display: ImageDisplay, t: int = 0, z
         if lut is None:
             continue
 
-        if lut.min is not None or lut.max is not None:
-            array[c] = np.clip(array[c], lut.min, lut.max)
+        min = lut.get_min(array[c])
+        max = lut.get_max(array[c])
 
-        min = np.min(array[c]) if lut.min is None else lut.min
-        max = np.max(array[c]) if lut.max is None else lut.max
+        if min is not None or max is not None:
+            array[c] = np.clip(array[c], min, max)
+
+        min = np.min(array[c]) if min is None else min
+        max = np.max(array[c]) if max is None else max
         array[c] = (array[c] - min) / (max - min)
 
         if lut.gamma != 1:

@@ -3,6 +3,7 @@ import numpy as np
 from bioio_plotter.converter import convert_to_rgb
 from bioio_plotter.image_display import ImageDisplay
 from bioio_plotter.lut import Lut
+from bioio_plotter.percentile import Percentile
 
 
 def test_converter_with_invalid_shape():
@@ -116,6 +117,42 @@ def test_converter_with_complex_image():
     ])
 
     array = convert_to_rgb(complex_image, image_display, t=t, z=z)
+
+    np.testing.assert_almost_equal(array, expected_array)
+
+
+def test_converter_with_min_percentile():
+    image = np.array([[[[
+        [0, 5, 9],
+        [1, 7, 8]
+    ]]]])
+    image_display = ImageDisplay([
+        Lut([1, 0, 1], min=Percentile(50))
+    ])
+    expected_array = np.array([
+        [[0, 0, 0], [0,   0, 0],   [1,   0, 1]],
+        [[0, 0, 0], [1/3, 0, 1/3], [2/3, 0, 2/3]]
+    ])
+
+    array = convert_to_rgb(image, image_display)
+
+    np.testing.assert_almost_equal(array, expected_array)
+
+
+def test_converter_with_max_percentile():
+    image = np.array([[[[
+        [0, 5, 9],
+        [1, 7, 8]
+    ]]]])
+    image_display = ImageDisplay([
+        Lut([1, 0, 1], max=Percentile(50))
+    ])
+    expected_array = np.array([
+        [[0, 0, 0],     [5/6, 0, 5/6], [1, 0, 1]],
+        [[1/6, 0, 1/6], [1, 0, 1],     [1, 0, 1]]
+    ])
+
+    array = convert_to_rgb(image, image_display)
 
     np.testing.assert_almost_equal(array, expected_array)
 

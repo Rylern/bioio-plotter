@@ -81,3 +81,23 @@ def test_get_None_lut_with_dict():
     lut = image_display.get_lut(channel)
 
     assert expected_lut == lut
+
+
+def test_rgb_image_display():
+    expected_luts = [
+        Lut(colors.RED, 0, 255),
+        Lut(colors.GREEN, 0, 255),
+        Lut(colors.BLUE, 0, 255)
+    ]
+
+    image_display = ImageDisplay.create_rgb()
+
+    assert expected_luts == [image_display.get_lut(0), image_display.get_lut(1), image_display.get_lut(2)]
+
+
+def test_grey_image_display():
+    expected_lut = Lut(colors.BLACK)
+
+    image_display = ImageDisplay.create_grey_single_channel()
+
+    assert expected_lut == image_display.get_lut(0)
